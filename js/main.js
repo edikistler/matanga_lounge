@@ -1,9 +1,4 @@
-// main.js — arranque del POC: carga la sala + la marioneta real del
-// personaje, mueve el personaje al hacer click (aún sin pathfinding
-// contra el polígono, eso es la tarea #5 — por ahora solo valida que el
-// click caiga dentro del área caminable) y renderiza todo cada frame.
-
-const DISPLAY_SCALE = 1 / 4; // resolución interna del canvas vs. el plate real
+const DISPLAY_SCALE = 1 / 4;
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -17,8 +12,8 @@ const character = {
   y: 1600,
   targetX: 2500,
   targetY: 1600,
-  speed: 900, // px de mundo por segundo
-  angleDeg: 90, // hacia la cámara por defecto (ver CharacterRig.pickView)
+  speed: 900,
+  angleDeg: 90,
   moving: false,
 };
 
@@ -36,7 +31,6 @@ async function init() {
 
 function onClick(ev) {
   const rect = canvas.getBoundingClientRect();
-  // click en CSS px -> px internos del canvas -> coords de mundo (plate)
   const scaleX = canvas.width / rect.width;
   const scaleY = canvas.height / rect.height;
   const canvasX = (ev.clientX - rect.left) * scaleX;
@@ -44,9 +38,6 @@ function onClick(ev) {
   const worldX = canvasX / DISPLAY_SCALE;
   const worldY = canvasY / DISPLAY_SCALE;
 
-  // si el click cae fuera del área caminable, lo llevamos al punto del
-  // borde del polígono más cercano en vez de ignorarlo — se siente más
-  // parecido a un point & click real que quedarse quieto.
   const target = room.clampToWalkable(worldX, worldY);
   character.targetX = target.x;
   character.targetY = target.y;
@@ -61,14 +52,21 @@ function updateCharacter(dtSeconds) {
   character.moving = dist > 1;
 
   if (character.moving) {
-    // ángulo de pantalla: 0=derecha, 90=abajo/hacia cámara, -90=arriba/espalda
     character.angleDeg = (Math.atan2(dy, dx) * 180) / Math.PI;
   }
 
   if (dist > step) {
-    character.x += (dx / dist) * step;
-    character.y += (dy / dist) * step;
-  } else {
+    const nextX = character.x + (dx / dist) * step;
+    const nextY = character.y + (dy / dist) * step;
+    if (room.isWalkable(nextX, nextY)) {
+      character.x = nextX;
+      character.y = nextY;
+    } else {
+      character.targetX = character.x;
+      character.targetY = character.y;
+      character.moving = false;
+    }
+  } else if (room.isWalkable(character.targetX, character.targetY)) {
     character.x = character.targetX;
     character.y = character.targetY;
   }
@@ -101,7 +99,6 @@ function loop(ts) {
   requestAnimationFrame(loop);
 }
 
-// expuestos para depuración / pruebas automatizadas (Playwright, consola)
 window.character = character;
 window.rig = rig;
 window.room = room;
