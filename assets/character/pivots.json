@@ -1,0 +1,59 @@
+{
+  "_nota": "Coordenadas ya escaladas a 0.5 (piezas guardadas a 1150x1336). Lienzo completo del personaje: 1150x1336.",
+  "canvas": { "w": 1150, "h": 1336 },
+
+  "frontal": {
+    "pieces": ["cabeza","torso","brazo_izq","brazo_der","antebrazo_izq","antebrazo_der","muslo_izq","pantorrilla_izq","muslo_der","pantorrilla_der"],
+    "pivots": {
+      "cuello":        { "x": 575, "y": 229 },
+      "hombro_der":    { "x": 711, "y": 371 },
+      "hombro_izq":    { "x": 472, "y": 375 },
+      "raiz":          { "x": 571, "y": 457 },
+      "codo_izq":      { "x": 465, "y": 525 },
+      "codo_der":      { "x": 723, "y": 530 },
+      "cadera_izq":    { "x": 509, "y": 672 },
+      "cadera_der":    { "x": 623, "y": 673 },
+      "rodilla_izq":   { "x": 509, "y": 955 },
+      "rodilla_der":   { "x": 656, "y": 962 }
+    },
+    "legs": [
+      { "thigh": "muslo_izq", "shin": "pantorrilla_izq", "hip": "cadera_izq", "knee": "rodilla_izq" },
+      { "thigh": "muslo_der", "shin": "pantorrilla_der", "hip": "cadera_der", "knee": "rodilla_der" }
+    ]
+  },
+
+  "perfil": {
+    "pieces": ["cabeza","torso","hombro_brazo_cercano","antebrazo_mano_cercano","brazo_lejano_tira","muslo_cercano","pantorrilla_cercana","muslo_lejano_tira","pantorrilla_lejana"],
+    "pivots": {
+      "cuello":          { "x": 575, "y": 229 },
+      "cadera_cercana":  { "x": 593, "y": 704 },
+      "cadera_lejana":   { "x": 517, "y": 710 },
+      "rodilla_cercana": { "x": 607, "y": 936 },
+      "rodilla_lejana":  { "x": 540, "y": 947 }
+    },
+    "legs": [
+      { "thigh": "muslo_lejano_tira", "shin": "pantorrilla_lejana", "hip": "cadera_lejana", "knee": "rodilla_lejana", "role": "lejana" },
+      { "thigh": "muslo_cercano", "shin": "pantorrilla_cercana", "hip": "cadera_cercana", "knee": "rodilla_cercana", "role": "cercana" }
+    ]
+  },
+
+  "perfil-caminando": {
+    "_nota": "Pose completa a media zancada. Se usa como blend/crossfade en los extremos del paso, no con rotación de hueso — el contorno de la pierna lejana cambia de forma respecto a la de pie (ver notas de rig).",
+    "pieces": ["cabeza","torso","brazo_tira","antebrazo_mano","muslo_a","muslo_b","pantorrilla_a","pantorrilla_b"]
+  },
+
+  "espalda": {
+    "pieces": ["cabeza","torso","brazo_tira","antebrazo_mano_a","antebrazo_mano_b","manga_fragmento","pierna_a","pierna_b","pierna_shoe_a","pierna_shoe_b"],
+    "pivots": {
+      "cuello":  { "x": 596, "y": 214 },
+      "hip_A":   { "x": 658, "y": 735 },
+      "hip_B":   { "x": 545, "y": 732 },
+      "knee_A":  { "x": 657, "y": 937 },
+      "knee_B":  { "x": 532, "y": 943 }
+    },
+    "legs": [
+      { "thigh": "pierna_a", "shin": "pierna_shoe_a", "hip": "hip_A", "knee": "knee_A" },
+      { "thigh": "pierna_b", "shin": "pierna_shoe_b", "hip": "hip_B", "knee": "knee_B" }
+    ]
+  }
+}
