@@ -1,17 +1,26 @@
- {
+{
+  "_nota": "Polígono ajustado contra el plate real (6336x2688), trazado con grilla de referencia. Los puntos van en sentido horario empezando por atrás-izquierda.",
   "polygon": [
-    { "x": 400,  "y": 870 },
-    { "x": 4900, "y": 890 },
-    { "x": 4940, "y": 2480 },
-    { "x": 80,   "y": 2480 }
+    { "x": 0,    "y": 1082 },
+    { "x": 792,  "y": 1072 },
+    { "x": 1848, "y": 1045 },
+    { "x": 2376, "y": 924 },
+    { "x": 3168, "y": 781 },
+    { "x": 3960, "y": 781 },
+    { "x": 4646, "y": 908 },
+    { "x": 5227, "y": 1035 },
+    { "x": 5227, "y": 2482 },
+    { "x": 0,    "y": 2482 }
   ],
   "scaleRamp": {
-    "yFar": 870,
-    "yNear": 2480,
-    "heightAtFar": 520,
-    "heightAtNear": 1050
+    "_nota": "Altura en pantalla (px) del personaje según qué tan al fondo (yFar) o al frente (yNear) esté parado. Interpolación lineal por la Y de sus pies.",
+    "yFar": 781,
+    "yNear": 2482,
+    "heightAtFar": 580,
+    "heightAtNear": 1150
   },
   "obstacles": {
+    "_nota": "Rectángulos aproximados a ojo (x1,y1)-(x2,y2) sobre las mismas coords del plate. El personaje no puede pisar adentro de ninguno — se detiene en el borde en vez de atravesarlo. Son la huella en el piso de cada mueble, no su bbox visual completo (que incluye alto, no solo lo que ocupa en el suelo) — ajústalos comparando contra el plate real.",
     "list": [
       { "label": "booth-dj-pared-izq", "x1": 2000, "y1": 1450, "x2": 2100, "y2": 2325 },
       { "label": "booth-dj-pared-der", "x1": 3800, "y1": 1450, "x2": 3900, "y2": 2325 },
@@ -24,6 +33,7 @@
     ]
   },
   "platforms": {
+    "_nota": "Zonas elevadas: se puede caminar (además del polígono normal), pero se dibuja al personaje 'levantado' liftPx en pantalla y siempre delante de forceFrontLayer (si no, el recorte de la tarima lo tapa por la regla normal de baselineY). Polígono a ojo — ajústalo contra el plate real, sobre todo la parte de las escaleras.",
     "list": [
       {
         "label": "booth-dj-top",
