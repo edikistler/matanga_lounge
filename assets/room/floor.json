@@ -1,5 +1,4 @@
 {
-  "_nota": "Polígono aproximado a ojo sobre el plate (6336x2688). Es un primer punto de partida para el POC — ajústalo comparando con el plate real; los 4 puntos van en sentido horario empezando por atrás-izquierda.",
   "polygon": [
     { "x": 400,  "y": 870 },
     { "x": 4900, "y": 890 },
@@ -7,10 +6,20 @@
     { "x": 80,   "y": 2480 }
   ],
   "scaleRamp": {
-    "_nota": "Altura en pantalla (px) del personaje según qué tan al fondo (yFar) o al frente (yNear) esté parado. Interpolación lineal por la Y de sus pies.",
     "yFar": 870,
     "yNear": 2480,
     "heightAtFar": 520,
     "heightAtNear": 1050
+  },
+  "obstacles": {
+    "list": [
+      { "label": "booth-dj-escalones", "x1": 2000, "y1": 1450, "x2": 3900, "y2": 2325 },
+      { "label": "cratemesa-tornamesa", "x1": 3550, "y1": 2250, "x2": 4420, "y2": 2556 },
+      { "label": "barra-bancos", "x1": 2080, "y1": 1000, "x2": 3280, "y2": 1247 },
+      { "label": "mesita-puffs", "x1": 1500, "y1": 1550, "x2": 2150, "y2": 1842 },
+      { "label": "mesita-chesterfield", "x1": 3950, "y1": 1450, "x2": 4730, "y2": 1705 },
+      { "label": "sillon-verde", "x1": 3900, "y1": 2350, "x2": 5370, "y2": 2687 },
+      { "label": "caja-registradora-crates", "x1": 0, "y1": 2150, "x2": 970, "y2": 2472 }
+    ]
   }
 }
