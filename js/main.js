@@ -1,6 +1,6 @@
 // main.js — arranque del POC: carga la sala + la marioneta real del
 // personaje, calcula la ruta más corta al hacer click (rodeando muebles,
-// ver room.findPath) y renderiza todo cada frame.
+// ver room.findPath), la sigue waypoint a waypoint y renderiza cada frame.
 
 const DISPLAY_SCALE = 1 / 4; // resolución interna del canvas vs. el plate real
 
@@ -12,11 +12,14 @@ const room = new Room();
 const rig = new CharacterRig();
 
 const character = {
-  x: 2500,
-  y: 1600,
-  targetX: 2500,
-  targetY: 1600,
+  x: 3000,
+  y: 2450,
+  targetX: 3000,
+  targetY: 2450,
   path: [], // waypoints pendientes después de targetX/Y (ver room.findPath)
+  goalX: 3000, // destino final del último click (para re-calcular ruta si se topa)
+  goalY: 2450,
+  replans: 0, // re-cálculos hechos para este click (tope, evita bucles)
   speed: 900, // px de mundo por segundo
   angleDeg: 90, // hacia la cámara por defecto (ver CharacterRig.pickView)
   moving: false,
@@ -52,11 +55,46 @@ function onClick(ev) {
   // room.findPath calcula la ruta más corta rodeando muebles (grafo de
   // visibilidad + Dijkstra) — si no hay nada en medio, es simplemente el
   // punto final en línea recta, igual que antes.
-  const path = room.findPath(character.x, character.y, target.x, target.y);
-  if (path.length === 0) return;
+  character.goalX = target.x;
+  character.goalY = target.y;
+  character.replans = 0;
+  followPath(room.findPath(character.x, character.y, target.x, target.y));
+}
+
+// Carga una ruta (lista de waypoints, ver room.findPath) como el camino a
+// seguir: el primero es el target inmediato, el resto queda en cola.
+function followPath(path) {
+  if (path.length === 0) {
+    character.path = [];
+    character.targetX = character.x;
+    character.targetY = character.y;
+    return;
+  }
   character.path = path.slice(1);
   character.targetX = path[0].x;
   character.targetY = path[0].y;
+}
+
+// Avanza hasta "distance" px hacia el target actual en sub-pasos chicos,
+// verificando que cada sub-paso caiga en zona caminable. Devuelve false si
+// se topó con algo antes de completar la distancia.
+const SUBSTEP = 8; // mismo paso que room.isSegmentClear
+function advanceTowardTarget(distance) {
+  let remaining = distance;
+  while (remaining > 0) {
+    const dx = character.targetX - character.x;
+    const dy = character.targetY - character.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 0.5) return true;
+    const s = Math.min(SUBSTEP, remaining, dist);
+    const nextX = character.x + (dx / dist) * s;
+    const nextY = character.y + (dy / dist) * s;
+    if (!room.isWalkable(nextX, nextY)) return false;
+    character.x = nextX;
+    character.y = nextY;
+    remaining -= s;
+  }
+  return true;
 }
 
 function updateCharacter(dtSeconds) {
@@ -72,18 +110,18 @@ function updateCharacter(dtSeconds) {
 
   if (dist > step) {
     character.moving = true;
-    const nextX = character.x + (dx / dist) * step;
-    const nextY = character.y + (dy / dist) * step;
-    if (room.isWalkable(nextX, nextY)) {
-      character.x = nextX;
-      character.y = nextY;
-    } else {
-      // no debería pasar ya con la ruta calculada, pero por seguridad no
-      // atraviesa el obstáculo si de algún modo el tramo quedó obstruido.
-      character.path = [];
-      character.targetX = character.x;
-      character.targetY = character.y;
-      character.moving = false;
+    if (!advanceTowardTarget(step)) {
+      // Se topó con algo que la ruta no había visto (una rendija entre
+      // zonas, un borde). Antes se quedaba parado ahí = "atorado". Ahora
+      // re-calcula la ruta al destino desde donde está (con tope de
+      // intentos para no ciclar) y sólo si tampoco hay ruta se detiene.
+      if (character.replans < 3) {
+        character.replans++;
+        followPath(room.findPath(character.x, character.y, character.goalX, character.goalY));
+      } else {
+        followPath([]);
+        character.moving = false;
+      }
     }
   } else {
     character.x = character.targetX;
