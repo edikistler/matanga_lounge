@@ -54,6 +54,11 @@ class Room {
     return obstacles.some((o) => x >= o.x1 && x <= o.x2 && y >= o.y1 && y <= o.y2);
   }
 
+  platformAt(x, y) {
+    const platforms = (this.floor.platforms && this.floor.platforms.list) || [];
+    return platforms.find((p) => pointInPolygon(x, y, p.polygon)) || null;
+  }
+
   clampToWalkable(x, y) {
     if (!pointInPolygon(x, y, this.floor.polygon)) {
       return closestPointOnPolygon(x, y, this.floor.polygon);
@@ -67,10 +72,10 @@ class Room {
     return { x, y };
   }
 
-  render(ctx, feetY, drawCharacter) {
+  render(ctx, feetX, feetY, drawCharacter) {
     ctx.drawImage(this.plateImg, 0, 0);
 
-    const { front, behind } = this.groupLayers(feetY);
+    const { front, behind } = this.groupLayers(feetX, feetY);
 
     for (const layer of front) {
       ctx.drawImage(this.layerImgs[layer.file], 0, 0);
@@ -83,11 +88,13 @@ class Room {
     }
   }
 
-  groupLayers(feetY) {
+  groupLayers(feetX, feetY) {
+    const platform = this.platformAt(feetX, feetY);
     const front = [];
     const behind = [];
     for (const layer of this.layers.layers) {
-      if (layer.baselineY === null || feetY >= layer.baselineY) {
+      const forcedFront = platform && platform.forceFrontLayer === layer.file;
+      if (forcedFront || layer.baselineY === null || feetY >= layer.baselineY) {
         front.push(layer);
       } else {
         behind.push(layer);
