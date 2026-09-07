@@ -65,10 +65,14 @@ class Room {
     return r.heightAtFar + t * (r.heightAtNear - r.heightAtFar);
   }
 
-  // Punto dentro del polígono caminable Y fuera de cualquier obstáculo
-  // (mueble) — ambas condiciones tienen que cumplirse.
+  // Caminable = (dentro del polígono del piso O sobre una plataforma) Y
+  // fuera de cualquier obstáculo (mueble suelto). Las plataformas pueden
+  // quedar fuera del polígono del piso: así el booth se recorta del piso
+  // con una muesca y la única forma de subir es por donde el polígono de
+  // la plataforma se traslapa con el piso (abajo de las escaleras).
   isWalkable(x, y) {
-    return pointInPolygon(x, y, this.floor.polygon) && !this.isInsideObstacle(x, y);
+    const onFloor = pointInPolygon(x, y, this.floor.polygon) || this.platformAt(x, y) !== null;
+    return onFloor && !this.isInsideObstacle(x, y);
   }
 
   isInsideObstacle(x, y) {
@@ -82,19 +86,25 @@ class Room {
     return platforms.find((p) => pointInPolygon(x, y, p.polygon)) || null;
   }
 
-  // Si (x,y) ya es caminable lo devuelve tal cual. Si cae fuera del
-  // polígono, lo manda al borde del polígono más cercano. Si cae dentro
-  // de un obstáculo, lo manda al borde de ESE obstáculo más cercano —
-  // así un click sobre un mueble mueve al personaje hasta pegado a él,
-  // en vez de no hacer nada o meterlo adentro.
+  // Si (x,y) es caminable lo devuelve tal cual. Si no (click sobre un
+  // mueble, la barra, la pared...), busca el punto caminable más cercano
+  // en cualquier dirección — anillos de 16 direcciones a radios crecientes.
+  // Es a propósito una búsqueda y no "el borde más cercano del rectángulo":
+  // ese borde puede caer a su vez fuera del piso (p. ej. el sillón verde
+  // llega hasta abajo de la imagen) o exactamente sobre la línea, donde la
+  // prueba de caminable es ambigua — y el personaje acababa "atorado".
   clampToWalkable(x, y) {
-    if (!pointInPolygon(x, y, this.floor.polygon)) {
-      return closestPointOnPolygon(x, y, this.floor.polygon);
-    }
-    const obstacles = (this.floor.obstacles && this.floor.obstacles.list) || [];
-    for (const o of obstacles) {
-      if (x >= o.x1 && x <= o.x2 && y >= o.y1 && y <= o.y2) {
-        return closestPointOnRect(x, y, o);
+    if (this.isWalkable(x, y)) return { x, y };
+    for (let r = 12; r <= 2400; r += r < 200 ? 12 : 40) {
+      for (let k = 0; k < 16; k++) {
+        const a = (k * Math.PI) / 8;
+        const px = x + Math.cos(a) * r, py = y + Math.sin(a) * r;
+        if (this.isWalkable(px, py)) {
+          // un poco más adentro en la misma dirección, para que el destino
+          // no quede a 2px de un borde (los tramos que salen de ahí lo rozan)
+          const qx = x + Math.cos(a) * (r + 40), qy = y + Math.sin(a) * (r + 40);
+          return this.isWalkable(qx, qy) ? { x: qx, y: qy } : { x: px, y: py };
+        }
       }
     }
     return { x, y };
@@ -106,7 +116,7 @@ class Room {
   // segmento pasa en diagonal.
   isSegmentClear(ax, ay, bx, by) {
     const dist = Math.hypot(bx - ax, by - ay);
-    const step = 15;
+    const step = 8; // mismo paso que usa main.js al mover, así ruta y movimiento coinciden
     const steps = Math.max(1, Math.ceil(dist / step));
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
@@ -115,23 +125,37 @@ class Room {
     return true;
   }
 
-  // Grafo de visibilidad: nodos = esquinas de cada mueble, separadas
-  // "margin" px hacia afuera (así el personaje no roza el mueble al pasar
-  // pegado a la esquina), descartando las que caigan fuera del piso o
-  // dentro de OTRO mueble.
+  // Grafo de visibilidad: nodos "para doblar la esquina", separados
+  // "margin" px del borde (así el personaje no roza el mueble al pasar
+  // pegado). Tres fuentes:
+  //  - esquinas de cada obstáculo (4 por rectángulo, hacia afuera)
+  //  - vértices del polígono del piso (para rodear la muesca del booth y
+  //    cualquier entrante del piso — sin esto sólo sabía rodear rectángulos)
+  //  - vértices de las plataformas (para entrar/salir por las escaleras)
+  // Para los vértices se prueban 8 direcciones y se conservan las que
+  // caen en zona caminable. Salen algunos nodos de más, pero Dijkstra con
+  // ~60 nodos es trivial y se calcula sólo al hacer click.
   visibilityNodes() {
     const obstacles = (this.floor.obstacles && this.floor.obstacles.list) || [];
-    const margin = 90;
+    const platforms = (this.floor.platforms && this.floor.platforms.list) || [];
+    const margin = 70;
     const nodes = [];
+    const add = (x, y) => { if (this.isWalkable(x, y)) nodes.push({ x, y }); };
+
     for (const o of obstacles) {
-      const corners = [
-        { x: o.x1 - margin, y: o.y1 - margin },
-        { x: o.x2 + margin, y: o.y1 - margin },
-        { x: o.x1 - margin, y: o.y2 + margin },
-        { x: o.x2 + margin, y: o.y2 + margin },
-      ];
-      for (const c of corners) {
-        if (this.isWalkable(c.x, c.y)) nodes.push(c);
+      add(o.x1 - margin, o.y1 - margin);
+      add(o.x2 + margin, o.y1 - margin);
+      add(o.x1 - margin, o.y2 + margin);
+      add(o.x2 + margin, o.y2 + margin);
+    }
+
+    const vertexSets = [this.floor.polygon, ...platforms.map((p) => p.polygon)];
+    for (const poly of vertexSets) {
+      for (const v of poly) {
+        for (let k = 0; k < 8; k++) {
+          const a = (k * Math.PI) / 4;
+          add(v.x + Math.cos(a) * margin, v.y + Math.sin(a) * margin);
+        }
       }
     }
     return nodes;
@@ -180,15 +204,23 @@ class Room {
       }
     }
 
+    let goal = END;
     if (!isFinite(dist[END])) {
-      // no se encontró ruta (no debería pasar con el target ya clampeado a
-      // zona caminable) — de todos modos apunta directo, mejor eso que
-      // quedarse congelado sin hacer nada.
-      return [{ x: endX, y: endY }];
+      // Destino inalcanzable (zona encerrada por muebles): en vez de irse
+      // en línea recta y toparse, camina hasta el nodo alcanzable más
+      // cercano al destino — es lo que hace un point & click clásico.
+      let bestD = Infinity;
+      goal = -1;
+      for (let i = 2; i < n; i++) {
+        if (!isFinite(dist[i])) continue;
+        const d = Math.hypot(nodes[i].x - endX, nodes[i].y - endY);
+        if (d < bestD) { bestD = d; goal = i; }
+      }
+      if (goal === -1) return []; // ni un nodo alcanzable: no se mueve
     }
 
     const path = [];
-    for (let cur = END; cur !== -1; cur = prev[cur]) path.unshift(nodes[cur]);
+    for (let cur = goal; cur !== -1; cur = prev[cur]) path.unshift(nodes[cur]);
     return path.slice(1); // sin el nodo de partida
   }
 
@@ -240,39 +272,6 @@ function downscale(img, w, h) {
   c.height = h;
   c.getContext("2d").drawImage(img, 0, 0, w, h);
   return c;
-}
-
-function closestPointOnSegment(px, py, ax, ay, bx, by) {
-  const abx = bx - ax, aby = by - ay;
-  const lenSq = abx * abx + aby * aby;
-  let t = lenSq === 0 ? 0 : ((px - ax) * abx + (py - ay) * aby) / lenSq;
-  t = clamp(t, 0, 1);
-  return { x: ax + abx * t, y: ay + aby * t };
-}
-
-// Punto más cercano sobre el borde de un rectángulo {x1,y1,x2,y2}, dado
-// un (x,y) que cae DENTRO de él. Empuja hacia el lado más cercano.
-function closestPointOnRect(x, y, r) {
-  const dLeft = x - r.x1, dRight = r.x2 - x, dTop = y - r.y1, dBottom = r.y2 - y;
-  const m = Math.min(dLeft, dRight, dTop, dBottom);
-  if (m === dLeft) return { x: r.x1, y };
-  if (m === dRight) return { x: r.x2, y };
-  if (m === dTop) return { x, y: r.y1 };
-  return { x, y: r.y2 };
-}
-
-function closestPointOnPolygon(x, y, polygon) {
-  let best = null;
-  let bestDist = Infinity;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const p = closestPointOnSegment(x, y, polygon[j].x, polygon[j].y, polygon[i].x, polygon[i].y);
-    const d = (p.x - x) ** 2 + (p.y - y) ** 2;
-    if (d < bestDist) {
-      bestDist = d;
-      best = p;
-    }
-  }
-  return best;
 }
 
 function loadImage(src) {
