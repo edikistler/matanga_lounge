@@ -1,1 +1,19 @@
-
+{
+  "plate": "00_plate-fondo.jpg",
+  "plateSize": { "w": 6336, "h": 2688 },
+  "layers": [
+    { "file": "01_caja-registradora-crates.png", "baselineY": 2472 },
+    { "file": "02_barra-bancos.png", "baselineY": 1247 },
+    { "file": "03_bocina-pa-izquierda.png", "baselineY": null },
+    { "file": "04_bocina-pa-derecha.png", "baselineY": null },
+    { "file": "05_mesita-puffs.png", "baselineY": 1842 },
+    { "file": "06_mesita-chesterfield.png", "baselineY": 1705 },
+    { "file": "07_booth-dj-escalones.png", "baselineY": 2325 },
+    { "file": "08_cratemesa-tornamesa-audifonos.png", "baselineY": 2556 },
+    { "file": "09_sillon-verde.png", "baselineY": 2687 },
+    { "file": "10_bocina-pa-esquina-izq.png", "baselineY": null },
+    { "file": "11_barandal-poste-cordon.png", "baselineY": 1971 },
+    { "file": "12_parche-esquina-superior-izq.png", "baselineY": null }
+  ],
+  "_nota": "baselineY: null = objeto montado en alto (bocinas, parche) - el personaje SIEMPRE va delante, nunca lo tapan. Para el resto: personaje va detrás del recorte si sus pies (feet Y) quedan por ARRIBA de baselineY (más al fondo), delante si quedan por debajo."
+}
