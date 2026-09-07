@@ -1,0 +1,16 @@
+{
+  "_nota": "Polígono aproximado a ojo sobre el plate (6336x2688). Es un primer punto de partida para el POC — ajústalo comparando con el plate real; los 4 puntos van en sentido horario empezando por atrás-izquierda.",
+  "polygon": [
+    { "x": 400,  "y": 870 },
+    { "x": 4900, "y": 890 },
+    { "x": 4940, "y": 2480 },
+    { "x": 80,   "y": 2480 }
+  ],
+  "scaleRamp": {
+    "_nota": "Altura en pantalla (px) del personaje según qué tan al fondo (yFar) o al frente (yNear) esté parado. Interpolación lineal por la Y de sus pies.",
+    "yFar": 870,
+    "yNear": 2480,
+    "heightAtFar": 520,
+    "heightAtNear": 1050
+  }
+}
