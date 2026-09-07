@@ -1,4 +1,8 @@
-const DISPLAY_SCALE = 1 / 4;
+// main.js — arranque del POC: carga la sala + la marioneta real del
+// personaje, calcula la ruta más corta al hacer click (rodeando muebles,
+// ver room.findPath) y renderiza todo cada frame.
+
+const DISPLAY_SCALE = 1 / 4; // resolución interna del canvas vs. el plate real
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -12,8 +16,9 @@ const character = {
   y: 1600,
   targetX: 2500,
   targetY: 1600,
-  speed: 900,
-  angleDeg: 90,
+  path: [], // waypoints pendientes después de targetX/Y (ver room.findPath)
+  speed: 900, // px de mundo por segundo
+  angleDeg: 90, // hacia la cámara por defecto (ver CharacterRig.pickView)
   moving: false,
 };
 
@@ -31,6 +36,7 @@ async function init() {
 
 function onClick(ev) {
   const rect = canvas.getBoundingClientRect();
+  // click en CSS px -> px internos del canvas -> coords de mundo (plate)
   const scaleX = canvas.width / rect.width;
   const scaleY = canvas.height / rect.height;
   const canvasX = (ev.clientX - rect.left) * scaleX;
@@ -38,9 +44,19 @@ function onClick(ev) {
   const worldX = canvasX / DISPLAY_SCALE;
   const worldY = canvasY / DISPLAY_SCALE;
 
+  // si el click cae fuera del área caminable, lo llevamos al punto del
+  // borde del polígono (o del mueble) más cercano en vez de ignorarlo —
+  // se siente más parecido a un point & click real que quedarse quieto.
   const target = room.clampToWalkable(worldX, worldY);
-  character.targetX = target.x;
-  character.targetY = target.y;
+
+  // room.findPath calcula la ruta más corta rodeando muebles (grafo de
+  // visibilidad + Dijkstra) — si no hay nada en medio, es simplemente el
+  // punto final en línea recta, igual que antes.
+  const path = room.findPath(character.x, character.y, target.x, target.y);
+  if (path.length === 0) return;
+  character.path = path.slice(1);
+  character.targetX = path[0].x;
+  character.targetY = path[0].y;
 }
 
 function updateCharacter(dtSeconds) {
@@ -49,26 +65,39 @@ function updateCharacter(dtSeconds) {
   const dist = Math.hypot(dx, dy);
   const step = character.speed * dtSeconds;
 
-  character.moving = dist > 1;
-
-  if (character.moving) {
+  if (dist > 1) {
+    // ángulo de pantalla: 0=derecha, 90=abajo/hacia cámara, -90=arriba/espalda
     character.angleDeg = (Math.atan2(dy, dx) * 180) / Math.PI;
   }
 
   if (dist > step) {
+    character.moving = true;
     const nextX = character.x + (dx / dist) * step;
     const nextY = character.y + (dy / dist) * step;
     if (room.isWalkable(nextX, nextY)) {
       character.x = nextX;
       character.y = nextY;
     } else {
+      // no debería pasar ya con la ruta calculada, pero por seguridad no
+      // atraviesa el obstáculo si de algún modo el tramo quedó obstruido.
+      character.path = [];
       character.targetX = character.x;
       character.targetY = character.y;
       character.moving = false;
     }
-  } else if (room.isWalkable(character.targetX, character.targetY)) {
+  } else {
     character.x = character.targetX;
     character.y = character.targetY;
+    if (character.path.length > 0) {
+      // llegó a este waypoint intermedio: sigue con el siguiente tramo de
+      // la ruta sin que el jugador tenga que volver a hacer click.
+      const next = character.path.shift();
+      character.targetX = next.x;
+      character.targetY = next.y;
+      character.moving = true;
+    } else {
+      character.moving = false;
+    }
   }
 
   rig.update(dtSeconds, character.moving);
@@ -101,6 +130,7 @@ function loop(ts) {
   requestAnimationFrame(loop);
 }
 
+// expuestos para depuración / pruebas automatizadas (Playwright, consola)
 window.character = character;
 window.rig = rig;
 window.room = room;
