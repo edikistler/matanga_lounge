@@ -77,7 +77,9 @@ function updateCharacter(dtSeconds) {
 function drawCharacter() {
   const s = DISPLAY_SCALE;
   const heightPx = room.scaleForFeetY(character.y) * s;
-  rig.render(ctx, character.x * s, character.y * s, heightPx, character.angleDeg);
+  const platform = room.platformAt(character.x, character.y);
+  const liftPx = platform ? platform.lift * s : 0;
+  rig.render(ctx, character.x * s, character.y * s - liftPx, heightPx, character.angleDeg);
 }
 
 function loop(ts) {
@@ -87,9 +89,9 @@ function loop(ts) {
   updateCharacter(dtSeconds);
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  room.render(ctx, character.y, drawCharacter);
+  room.render(ctx, character.x, character.y, drawCharacter);
 
-  const { front, behind } = room.groupLayers(character.y);
+  const { front, behind } = room.groupLayers(character.x, character.y);
   debugEl.textContent =
     `pies: ${character.x.toFixed(0)}, ${character.y.toFixed(0)}  ángulo: ${character.angleDeg.toFixed(0)}°  ${character.moving ? "caminando" : "quieto"}\n` +
     `altura: ${room.scaleForFeetY(character.y).toFixed(0)}px  vista: ${rig.pickView(character.angleDeg).view}\n` +
