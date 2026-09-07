@@ -79,10 +79,11 @@ class CharacterRig {
   // 180/-180 = mirando a la izquierda, -90 = de espaldas (alejándose).
   pickView(angleDeg) {
     const a = ((angleDeg % 360) + 360) % 360; // normaliza a [0,360)
-    if (a >= 315 || a < 45) return { view: "perfil", mirror: false };
+    if (a >= 315 || a < 45) return { view: "perfil", mirror: true };
     if (a >= 45 && a < 135) return { view: "frontal", mirror: false };
-    if (a >= 135 && a < 225) return { view: "perfil", mirror: true };
+    if (a >= 135 && a < 225) return { view: "perfil", mirror: false };
     return { view: "espalda", mirror: false };
+
   }
 
   // ctx: sin transform propio (coords = px de canvas destino).
