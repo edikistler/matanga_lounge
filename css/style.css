@@ -1,1 +1,36 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #111;
+  height: 100%;
+  overflow: hidden;
+}
 
+#stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#game {
+  max-width: 100%;
+  max-height: 100%;
+  cursor: pointer;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+#debug {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  color: #0f0;
+  font: 12px monospace;
+  background: rgba(0,0,0,0.5);
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: pre;
+}
